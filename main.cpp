@@ -217,8 +217,6 @@ void drawRect(HDC hdc, RECT rect, int color) {
 // win/loss images
 HBITMAP yourdidit = nullptr;
 HBITMAP betterluck = nullptr;
-HWND hYourdidit = nullptr;
-HWND hBetterluck = nullptr;
 
 void loadImages() {
     // returns the type of the handle that needs to be cast to an HBITMAP
@@ -229,10 +227,38 @@ void loadImages() {
 
 // Window procedure for handling messages
 LRESULT CALLBACK WinProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+
+    static HDC yourdiditMemDC = nullptr;
+    static HBITMAP yourdiditMemBitmap = nullptr;
+    static HDC betterluckMemDC = nullptr;
+    static HBITMAP betterluckMemBitmap = nullptr;
+
     switch (uMsg) {
         case WM_CREATE:
             loadImages();
             initBricks();
+
+            yourdiditMemDC = CreateCompatibleDC(GetDC(hWnd));
+            yourdiditMemBitmap = CreateCompatibleBitmap(GetDC(hWnd), 469, 321);
+            SelectObject(yourdiditMemDC, yourdiditMemBitmap);
+            {
+                HDC yourdiditTempDC = CreateCompatibleDC(GetDC(hWnd));
+                SelectObject(yourdiditTempDC, yourdidit);
+                BitBlt(yourdiditMemDC, 0, 0, 469, 321, yourdiditTempDC, 0, 0, SRCCOPY);
+                DeleteDC(yourdiditTempDC);
+            }
+
+            // Create memory DCs and bitmaps for betterluck
+            betterluckMemDC = CreateCompatibleDC(GetDC(hWnd));
+            betterluckMemBitmap = CreateCompatibleBitmap(GetDC(hWnd), 190, 164);
+            SelectObject(betterluckMemDC, betterluckMemBitmap);
+            {
+                HDC betterluckTempDC = CreateCompatibleDC(GetDC(hWnd));
+                SelectObject(betterluckTempDC, betterluck);
+                BitBlt(betterluckMemDC, 0, 0, 190, 164, betterluckTempDC, 0, 0, SRCCOPY);
+                DeleteDC(betterluckTempDC);
+            }
+
             break;
         case WM_PAINT: {
             PAINTSTRUCT ps;
@@ -293,21 +319,21 @@ LRESULT CALLBACK WinProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
                 DeleteObject(hFont);
             }
 
+            if (GAME_OVER) {
+                if (winloss == 0) {
+                    BitBlt(memDC, (SCREEN_W - 190) / 2, (SCREEN_H - 164) / 2, 190, 164, betterluckMemDC, 0, 0, SRCCOPY);
+                } else if (winloss == 1) {
+                    BitBlt(memDC, (SCREEN_W - 469) / 2, (SCREEN_H - 321) / 2, 469, 321, yourdiditMemDC, 0, 0, SRCCOPY);
+                }
+            }
+
             // Copy the back buffer to the front buffer in one operation
             BitBlt(hdc, 0, 0, SCREEN_W, SCREEN_H, memDC, 0, 0, SRCCOPY);
 
             SelectObject(memDC, oldBitmap);
             DeleteObject(memBitmap);
             DeleteDC(memDC);
-
-            if (GAME_OVER) {
-                if (winloss == 1) {
-                    SendMessageW(hYourdidit, STM_SETIMAGE, IMAGE_BITMAP, (LPARAM)yourdidit);
-                } else if (winloss == 0) {
-                    SendMessageW(hBetterluck, STM_SETIMAGE, IMAGE_BITMAP, (LPARAM)betterluck);
-                }
-            }
-
+            
             EndPaint(hWnd, &ps);
             return 0;
         }
@@ -345,6 +371,18 @@ LRESULT CALLBACK WinProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
             return 0;
 
         case WM_DESTROY:
+            if (yourdiditMemDC) {
+                DeleteDC(yourdiditMemDC);
+            }
+            if (yourdiditMemBitmap) {
+                DeleteObject(yourdiditMemBitmap);
+            }
+            if (betterluckMemDC) {
+                DeleteDC(betterluckMemDC);
+            }
+            if (betterluckMemBitmap) {
+                DeleteObject(betterluckMemBitmap);
+            }
             PostQuitMessage(0);
             return 0;
 
@@ -371,24 +409,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
         50, 50, SCREEN_W, SCREEN_H,
         nullptr, nullptr,
         hInstance, nullptr
-    );
-
-    hYourdidit = CreateWindowW(
-        L"Static",
-        NULL,
-        WS_VISIBLE | WS_CHILD | SS_BITMAP,
-        SCREEN_W/2 - 235, SCREEN_H/2 - 160, 469, 321,
-        hWnd, NULL,
-        NULL, NULL
-    );
-
-    hBetterluck = CreateWindowW(
-        L"Static",
-        NULL,
-        WS_VISIBLE | WS_CHILD | SS_BITMAP,
-        SCREEN_W/2 - 95, SCREEN_H/2 - 87, 190, 164,
-        hWnd, NULL,
-        NULL, NULL
     );
 
     ShowWindow(hWnd, nCmdShow);
