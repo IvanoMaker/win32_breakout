@@ -320,6 +320,12 @@ LRESULT CALLBACK WinProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
                 case VK_RIGHT:
                     p_movingRight = true;
                     break;
+                case VK_ESCAPE:
+                    if (GAME_START) {
+                        GAME_START = false;
+                        GAME_OVER = false;
+                    }
+                    break;
             }
             return 0;
 
