@@ -1,8 +1,8 @@
-## win32_breakout
+# win32_breakout
 
 This is a basic rendition of the classic Atari arcade game "breakout". This version is written from scratch in C++ using vanilla features in the Win32 API. This is intended to be used as a demo for the API as well as a boiler plate for makingn basic 2D games on windows platforms.
 
-# Functionality
+### Functionality
 * Draws rectangles, text, and bitmaps.
 * Handles user keyboard input.
 * Runs at a fixed framerate of 60 fps.
