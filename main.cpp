@@ -273,10 +273,10 @@ LRESULT CALLBACK WinProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
                 BitBlt(betterluckMemDC, 0, 0, 190, 164, betterluckTempDC, 0, 0, SRCCOPY);
                 DeleteDC(betterluckTempDC);
             }
-
             break;
+
         // when stuff is drawn on the window
-        case WM_PAINT:
+        case WM_PAINT: {
             PAINTSTRUCT ps;
             HDC hdc = BeginPaint(hWnd, &ps);
 
@@ -357,6 +357,7 @@ LRESULT CALLBACK WinProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
             
             EndPaint(hWnd, &ps);
             return 0;
+        }
         
         // when a key is pressed down
         case WM_KEYDOWN:
