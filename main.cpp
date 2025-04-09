@@ -9,62 +9,69 @@ void drawRect(HDC hdc, RECT rect, int color);
 void loadImages();
 
 // Constants for screen and paddle settings
-constexpr int SCREEN_H = 720;
-constexpr int SCREEN_W = 1280;
-constexpr int PADDLE_WIDTH = 125;
-constexpr int PADDLE_HEIGHT = 25;
-constexpr int BALL_SIZE = 15;
-constexpr int STEP = 8;
-constexpr int B_STEP = 4;
-constexpr int FRAME_DELAY = 16;
-bool GAME_START = false;
-bool GAME_OVER = false;
-int lives = 3;
-int winloss = -1; // -1 : game still going, 0 : game lost, 1 : game won
+// screen size is fixed to 720p
+constexpr int SCREEN_H = 720;       // fixed screen height of 720 pixels
+constexpr int SCREEN_W = 1280;      // fixed screen width of 1280 pixels
+constexpr int PADDLE_WIDTH = 125;   // fixed paddle width of 125 pixels
+constexpr int PADDLE_HEIGHT = 25;   // fixed paddle height of 25 pixels
+constexpr int BALL_SIZE = 15;       // fixed ball size of 15 pixels, ball is square
+constexpr int STEP = 8;             // paddle movement step size
+constexpr int B_STEP = 4;           // ball movement step size
+constexpr int FRAME_DELAY = 16;     // frame delay in milliseconds (60 FPS)
+bool GAME_START = false;            // game stating state (used for pausing)
+bool GAME_OVER = false;             // game over state (used for game end situations)
+int lives = 3;                      // player lives
+int winloss = -1;                   // -1 : game still going, 0 : game lost, 1 : game won
 
 // Paddle position and movement states
-int paddleX = (SCREEN_W / 2) - (PADDLE_WIDTH / 2);
-int paddleY = SCREEN_H - 100;
-bool p_movingLeft = false;
+int paddleX = (SCREEN_W / 2) - (PADDLE_WIDTH / 2); // draw the paddle in the center of the screen
+int paddleY = SCREEN_H - 100;                      // ... 100 pixels from the bottom of the screen
+bool p_movingLeft = false;                         // paddle movement states are initialized to false (paddle is still)
 bool p_movingRight = false;
 
 // Ball position and movement states
-int ballX = (SCREEN_W / 2) - (BALL_SIZE / 2);
-int ballY = SCREEN_H - 300;
-bool b_movingLeft = false;
+int ballX = (SCREEN_W / 2) - (BALL_SIZE / 2);      // draw the ball in the center of the screen
+int ballY = SCREEN_H - 300;                        // ... 300 pixels from the bottom of the screen
+bool b_movingLeft = false;                         // ball movement states are initialized to false (mostly)
 bool b_movingRight = false;
-bool b_movingUp = true;
+bool b_movingUp = true;                            // ball starts moving upwards
 bool b_movingDown = false;
 
 // Brick params
+// constants for creating the bricks at the top of the screen
+// each brick is 125x30, there are 8 bricks in each row and 5 rows of bricks
 constexpr int BRICK_WIDTH = 125;
 constexpr int BRICK_HEIGHT = 30;
 constexpr int BRICK_COLUMNS = 8;
 constexpr int BRICK_ROWS = 5;
 constexpr int BRICK_SPACING = 31;
 
+// Brick class
 class Brick {
     public:
-    int x, y;
-    int width, height;
-    bool hit;
-    int color;
-    RECT rect;
+    int x, y;           // x and y position
+    int width, height;  // width and height
+    bool hit;           // hit state (true if the brick has been hit by the ball)
+    int color;          // color (see color mapping below)
+    RECT rect;          // RECT object
 
+    // constructor
     Brick(int xPos, int yPos, int w, int h, int c) {
         x = xPos; y = yPos;
         width = w; height = h;
-        hit = false;
+        hit = false; // brick is not hit at the start
         rect = { x, y, x + width, y + height };
         color = c;
     }
 
+    // draw function, draw the brick on the screen if it hasn't been hit
     void draw(HDC hdc) const {
         if (!hit) {
             drawRect(hdc, rect, color);
         }
     }
 
+    // ball collision function
     bool isTouchingBall() const {
         return !(ballX + BALL_SIZE < x ||
             ballX > x + width ||
@@ -75,9 +82,11 @@ class Brick {
 
 // Update paddle position based on user input
 void updatePaddle() {
+    // if the paddle is moving left and the paddle is not at the left edge of the screen, move it left
     if (p_movingLeft && paddleX > 0) {
         paddleX -= STEP;
     }
+    // if the paddle is moving right and the paddle is not at the right edge of the screen, move it right
     if (p_movingRight && paddleX + PADDLE_WIDTH < SCREEN_W) {
         paddleX += STEP;
     }
@@ -99,6 +108,7 @@ void updateBall() {
         ballX + BALL_SIZE >= paddleX &&
         ballX <= paddleX + PADDLE_WIDTH;
 
+    // Ball movement logic, bounces off walls and the paddle
     if (b_movingLeft && ballX > 0) {
         ballX -= B_STEP;
     } else {
@@ -182,44 +192,48 @@ void initBricks() {
 
 // Draw a rectangle with a specified color
 void drawRect(HDC hdc, RECT rect, int color) {
+    // create brush object
     HBRUSH brush = nullptr;
 
+    // color mapping
     switch (color) {
-        case 0: // Black
+        case 0: // 0 : Black
             brush = CreateSolidBrush(RGB(0, 0, 0));
             break;
-        case 1: // White
+        case 1: // 1 : White
             brush = CreateSolidBrush(RGB(255, 255, 255));
             break;
-        case 2: // Red
+        case 2: // 2 : Red
             brush = CreateSolidBrush(RGB(255, 0, 0));
             break;
-        case 3: // Orange
+        case 3: // 3 : Orange
             brush = CreateSolidBrush(RGB(255, 165, 0));
             break;
-        case 4: // Yellow
+        case 4: // 4 : Yellow
             brush = CreateSolidBrush(RGB(255, 255, 0));
             break;
-        case 5: // Green
+        case 5: // 5 : Green
             brush = CreateSolidBrush(RGB(0, 128, 0));
             break;
-        case 6: // Blue
+        case 6: // 6 : Blue
             brush = CreateSolidBrush(RGB(0, 0, 255));
             break;
     }
 
+    // Draw the rectangle with the specified color
     if (brush) {
         FillRect(hdc, &rect, brush);
         DeleteObject(brush);
     }
 }
 
-// win/loss images
+// win/loss image handles
 HBITMAP yourdidit = nullptr;
 HBITMAP betterluck = nullptr;
 
+// defined the protoype function "loadImages"
 void loadImages() {
-    // returns the type of the handle that needs to be cast to an HBITMAP
+    // load the images and casst them to an HBITMAP object for all images
     yourdidit = (HBITMAP)LoadImageW(NULL, L"bmps\\yourdidit.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
     betterluck = (HBITMAP)LoadImageW(NULL, L"bmps\\betterluck.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
 }
@@ -227,17 +241,20 @@ void loadImages() {
 
 // Window procedure for handling messages
 LRESULT CALLBACK WinProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
-
+    // handles for double buffering the bitmaps
     static HDC yourdiditMemDC = nullptr;
     static HBITMAP yourdiditMemBitmap = nullptr;
     static HDC betterluckMemDC = nullptr;
     static HBITMAP betterluckMemBitmap = nullptr;
 
+    // window message switch case
     switch (uMsg) {
+        // when the window is created
         case WM_CREATE:
-            loadImages();
-            initBricks();
+            loadImages();  // load images
+            initBricks();  // initialize bricks
 
+            // Create memory DCs and bitmaps for the images
             yourdiditMemDC = CreateCompatibleDC(GetDC(hWnd));
             yourdiditMemBitmap = CreateCompatibleBitmap(GetDC(hWnd), 469, 321);
             SelectObject(yourdiditMemDC, yourdiditMemBitmap);
@@ -247,8 +264,6 @@ LRESULT CALLBACK WinProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
                 BitBlt(yourdiditMemDC, 0, 0, 469, 321, yourdiditTempDC, 0, 0, SRCCOPY);
                 DeleteDC(yourdiditTempDC);
             }
-
-            // Create memory DCs and bitmaps for betterluck
             betterluckMemDC = CreateCompatibleDC(GetDC(hWnd));
             betterluckMemBitmap = CreateCompatibleBitmap(GetDC(hWnd), 190, 164);
             SelectObject(betterluckMemDC, betterluckMemBitmap);
@@ -260,7 +275,8 @@ LRESULT CALLBACK WinProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
             }
 
             break;
-        case WM_PAINT: {
+        // when stuff is drawn on the window
+        case WM_PAINT:
             PAINTSTRUCT ps;
             HDC hdc = BeginPaint(hWnd, &ps);
 
@@ -310,6 +326,8 @@ LRESULT CALLBACK WinProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
                 "Consolas"             // use Consolas font
             );
 
+            // write the text "Lives: {lives}" to the screen
+            // use the font created above
             if (hFont) {
                 HFONT hOldFont = (HFONT)SelectObject(memDC, hFont);
                 SetTextColor(memDC, RGB(255, 255, 255));
@@ -319,6 +337,8 @@ LRESULT CALLBACK WinProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
                 DeleteObject(hFont);
             }
 
+            // Draw game over screen if the game is over
+            // different images used for different game states
             if (GAME_OVER) {
                 if (winloss == 0) {
                     BitBlt(memDC, (SCREEN_W - 190) / 2, (SCREEN_H - 164) / 2, 190, 164, betterluckMemDC, 0, 0, SRCCOPY);
@@ -327,26 +347,27 @@ LRESULT CALLBACK WinProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
                 }
             }
 
-            // Copy the back buffer to the front buffer in one operation
+            // Copy the back buffer to the front buffer
             BitBlt(hdc, 0, 0, SCREEN_W, SCREEN_H, memDC, 0, 0, SRCCOPY);
 
+            // delete the memory DC and bitmap to protect against memory leaks
             SelectObject(memDC, oldBitmap);
             DeleteObject(memBitmap);
             DeleteDC(memDC);
             
             EndPaint(hWnd, &ps);
             return 0;
-        }
-
+        
+        // when a key is pressed down
         case WM_KEYDOWN:
             switch (wParam) {
-                case VK_LEFT:
+                case VK_LEFT:   // left arrow key
                     p_movingLeft = true;
                     break;
-                case VK_RIGHT:
+                case VK_RIGHT:  // right arrow key
                     p_movingRight = true;
                     break;
-                case VK_ESCAPE:
+                case VK_ESCAPE: // escape key (used for pausing the game)
                     if (GAME_START) {
                         GAME_START = false;
                         GAME_OVER = false;
@@ -354,23 +375,27 @@ LRESULT CALLBACK WinProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
                     break;
             }
             return 0;
-
+        // when a key is released
         case WM_KEYUP:
+            // this will start the game when a key is released for the first time
+            // this makes sure the key isn't the escape key, otherwise it would never pause
             if (!GAME_START && wParam != VK_ESCAPE) {
                 GAME_START = TRUE;
             }
 
             switch (wParam) {
-                case VK_LEFT:
+                case VK_LEFT:  // left arrow key
                     p_movingLeft = false;
                     break;
-                case VK_RIGHT:
+                case VK_RIGHT: // right arrow key
                     p_movingRight = false;
                     break;
             }
             return 0;
 
+        // when the window is closed
         case WM_DESTROY:
+            // delete objects
             if (yourdiditMemDC) {
                 DeleteDC(yourdiditMemDC);
             }
@@ -385,7 +410,7 @@ LRESULT CALLBACK WinProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
             }
             PostQuitMessage(0);
             return 0;
-
+        // default case for unhandled windows messages
         default:
             return DefWindowProc(hWnd, uMsg, wParam, lParam);
     }
@@ -411,14 +436,17 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
         hInstance, nullptr
     );
 
+    // show the window
     ShowWindow(hWnd, nCmdShow);
 
     // Game loop
     MSG msg;
+    // clock object used for timing
     std::clock_t lastTime = std::clock();
 
+    // infinite loop for gameplay, user will close window when done
     for (;;) {
-        int bricksLeft = 0;
+        int bricksLeft = 0; // bricksLeft var used for detecting if the user has beat the game
         while (PeekMessageA(&msg, nullptr, 0, 0, PM_REMOVE)) {
             if (msg.message == WM_QUIT) {
                 return 0;
@@ -427,20 +455,26 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
             DispatchMessageA(&msg);
         }
 
-        std::clock_t currentTime = std::clock();
+        std::clock_t currentTime = std::clock(); // get current time
+        // check if the time since the last frame is greater than the frame delay
+        // if so, update the game state and redraw the screen
+        // this is used to cap the frame and update rate to 60 FPS
         if ((currentTime - lastTime) * 1000 / CLOCKS_PER_SEC >= FRAME_DELAY) {
             if (GAME_START && !GAME_OVER) {
+                // update the ball and paddle
                 updatePaddle();
                 updateBall();
-
+                
+                // check each bricks colision with the ball and if it exists or not
                 for (Brick& brick : bricks) {
                     if (!brick.hit) {
-                        bricksLeft++;
+                        bricksLeft++; // inc bricksLeft if this brick has not been hit
                     }
                     if (!brick.hit && brick.isTouchingBall()) {
+                        // this code executes if the ball hits the brick
                         brick.hit = true;
 
-                        // Calculate centers
+                        // Calculate centers, used for determining how the ball should behave when bouncing off the brick
                         int ballCenterX = ballX + BALL_SIZE / 2;
                         int ballCenterY = ballY + BALL_SIZE / 2;
                         int brickCenterX = brick.x + brick.width / 2;
@@ -456,27 +490,29 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
 
                         // Determine collision axis
                         if (overlapX < overlapY) {
-                            // Hit from left or right
+                            // Hit from left or right, bounce on the x-axis
                             b_movingLeft = dx < 0;
                             b_movingRight = dx >= 0;
                         } else {
-                            // Hit from top or bottom
+                            // Hit from top or bottom, bounce on the y-axis
                             b_movingUp = dy < 0;
                             b_movingDown = dy >= 0;
                         }
                         break;
                     }
                 }
-
+                
+                // if no bricks were left (all have been hit), end the game
                 if (bricksLeft == 0) {
                     GAME_OVER = true;
                     winloss = 1;
                 }
             }
-            InvalidateRect(hWnd, nullptr, TRUE); // Trigger redraw
+
+            // Trigger redraw
+            InvalidateRect(hWnd, nullptr, TRUE);
             lastTime = currentTime;
         }
     }
-
     return 0;
 }
