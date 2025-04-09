@@ -14,10 +14,10 @@ This is a basic rendition of the classic Atari arcade game "breakout". This vers
 To play the game, download the build or clone the repository and compile the main.cpp file. Then open the executable.
 
 ### Controls
-`<-` : Move the paddle left
-`->` : Move the paddle right
-`ESC`: pause the game
-to unpause the game, press either the left or right arrows
+- `<-` : Move the paddle left
+- `->` : Move the paddle right
+- `ESC`: pause the game
+- to unpause the game, press either the left or right arrows
 
 ## Clone the repository:
    ```bash
